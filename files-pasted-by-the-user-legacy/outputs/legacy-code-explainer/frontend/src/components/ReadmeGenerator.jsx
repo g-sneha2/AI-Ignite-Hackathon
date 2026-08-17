@@ -1,0 +1,1 @@
+export default function ReadmeGenerator({markdown,onGenerate}){return <section><div className="heading"><h2>README draft</h2><button onClick={onGenerate}>Generate README</button></div>{markdown&&<><button className="copy" onClick={()=>navigator.clipboard.writeText(markdown)}>Copy</button><pre>{markdown}</pre></>}</section>}

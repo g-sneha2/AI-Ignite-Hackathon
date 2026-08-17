@@ -1,0 +1,2 @@
+import {useState} from 'react';
+export default function RiskWarning({functions=[],onCheck,data}){const [fn,setFn]=useState('');return <section><h2>Change risk check</h2><div className="inline"><select value={fn} onChange={e=>setFn(e.target.value)}><option value="">Choose a function</option>{functions.map(f=><option key={f.name}>{f.name}</option>)}</select><button disabled={!fn} onClick={()=>onCheck(fn)}>Check risk</button></div>{data&&<div className="warning"><p>{data.warning}</p><small>Dependents: {data.dependents.join(', ')||'none detected'}</small></div>}</section>}

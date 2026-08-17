@@ -1,0 +1,1 @@
+export default function OnboardingPath({items}){return <section><h2>New engineer reading path</h2>{!items?<p>Open this tab to create a reading path.</p>:<ol>{items.map((x,i)=><li key={i}><b>{x.file}</b><span>{x.reason}</span></li>)}</ol>}</section>}
