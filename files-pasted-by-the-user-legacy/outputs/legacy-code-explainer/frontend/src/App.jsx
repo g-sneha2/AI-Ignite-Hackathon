@@ -1,4 +1,4 @@
-import {useState} from 'react';
+import {useState, useRef} from 'react';
 import api from './api/client';
 import RepoInput from './components/RepoInput';
 import FileTree from './components/FileTree';
@@ -9,7 +9,7 @@ import OnboardingPath from './components/OnboardingPath';
 import ReadmeGenerator from './components/ReadmeGenerator';
 import ChatPanel from './components/ChatPanel';
 
-const tabs=['Explain','Graph','Risk','Path','README','Ask'];
+// Tabs: file-scoped tabs only shown when a file is selected
 
 export default function App(){
   const [repo,setRepo]=useState(null),
@@ -25,6 +25,8 @@ export default function App(){
     [readme,setReadme]=useState(),
     [messages,setMessages]=useState([]);
 
+  const filePanelRef = useRef(null);
+
   const runRequest = async (key, fn) => {
     setBusy(b => ({...b, [key]: true}));
     try {
@@ -36,18 +38,33 @@ export default function App(){
 
   const call=async(fn)=>{try{setError('');return await fn()}catch(e){setError(e.response?.data?.detail||'Something went wrong. Check that the API server is running.')}};
 
+  // Prefetch repository-scoped data (onboarding path and README) after loading
+  // so repo-wide features are available immediately on the homepage.
+  const prefetchRepoScoped = async (repoId) => {
+    // Fire-and-forget but keep busy indicators via runRequest
+    runRequest('path', async()=> await call(async()=> (await api.post('/onboarding-path',{repo_id:repoId})).data)).then(d=>{ if(d) setPath(d.path) });
+    runRequest('readme', async()=> await call(async()=> (await api.post('/generate-readme',{repo_id:repoId})).data)).then(d=>{ if(d) setReadme(d.readme_markdown) });
+  };
+
   const load=async url=>{
     setLoading(true);
     const data = await runRequest('load', async()=> await call(async()=> (await api.post('/load-repo',{repo_url:url})).data));
     setLoading(false);
-    if(data){setRepo(data);setSelected(null);setExplain();setGraph();setRisk();setPath();setReadme();setMessages([])}
+    if(data){
+      setRepo(data);setSelected(null);setExplain();setGraph();setRisk();setPath();setReadme();setMessages([]);
+      prefetchRepoScoped(data.repo_id);
+    }
   };
 
   const choose=async file=>{
     setSelected(file);
     setRisk();
+    // Activate file panel automatically
+    setTab('Explain');
     const data = await runRequest('explain', async()=> await call(async()=> (await api.post('/explain-file',{repo_id:repo.repo_id,file_path:file})).data));
-    if(data)setExplain(data);
+    if(data) setExplain(data);
+    // scroll file panel into view
+    try{ filePanelRef.current?.scrollIntoView({behavior:'smooth', block:'start'}); }catch(e){}
   };
 
   const activate=async name=>{
@@ -93,16 +110,38 @@ export default function App(){
       <div className="workspace">
         <FileTree tree={repo.file_tree} onSelect={choose} selected={selected}/>
         <article>
-          <nav>{tabs.map(t=><button className={tab===t?'active':''} onClick={()=>activate(t)} key={t}>{t}</button>)}</nav>
+          {/* Repo-scoped panel (Path / README) shown at top */}
+          <nav>
+            {['Path','README'].map(t=>
+              <button key={t} className={tab===t?'active':''} onClick={()=>activate(t)}>{t}</button>
+            )}
+          </nav>
           <div className="panel">
-            {tab==='Explain'&&<ExplanationPanel data={explain} loading={busy.explain}/>}
-            {tab==='Graph'&&<DependencyGraph syntax={graph} loading={busy.graph}/>}
-            {tab==='Risk'&&<RiskWarning functions={explain?.functions} onCheck={checkRisk} data={risk} loading={busy.risk}/>}
             {tab==='Path'&&<OnboardingPath items={path} loading={busy.path}/>}
             {tab==='README'&&<ReadmeGenerator markdown={readme} onGenerate={generate} loading={busy.readme}/>}
-            {tab==='Ask'&&<ChatPanel messages={messages} onAsk={ask} loading={busy.ask}/>}
           </div>
+
+          {/* File-scoped panel (Explain / Graph / Risk) appears below when a file is selected */}
+          {selected && <>
+            <div ref={filePanelRef} className="panel file-panel">
+              <h3>File: {selected}</h3>
+              <nav>
+                {['Explain','Graph','Risk'].map(t=>
+                  <button key={t} className={tab===t?'active':''} onClick={()=>activate(t)}>{t}</button>
+                )}
+              </nav>
+              <div style={{marginTop:16}}>
+                {tab==='Explain'&&<ExplanationPanel data={explain} loading={busy.explain}/>}
+                {tab==='Graph'&&<DependencyGraph syntax={graph} loading={busy.graph}/>}
+                {tab==='Risk'&&<RiskWarning functions={explain?.functions} onCheck={checkRisk} data={risk} loading={busy.risk}/>}
+              </div>
+            </div>
+          </>}
         </article>
+
+        <aside className="chat-sidebar">
+          <ChatPanel messages={messages} onAsk={ask} loading={busy.ask} repoName={repo?.repo_id || repo?.file_tree && 'repository'} />
+        </aside>
       </div>
       :
       <div className="empty"><h2>Start with a public GitHub repository</h2><p>We’ll map its Python files, their connections, and the riskiest areas to change.</p></div>

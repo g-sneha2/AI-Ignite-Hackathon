@@ -86,7 +86,7 @@ button:disabled {
 
 .workspace {
   display: grid;
-  grid-template-columns: 280px 1fr;
+  grid-template-columns: 280px 1fr 360px;
   border: 1px solid #27324d;
   border-radius: 14px;
   overflow: hidden;
@@ -100,6 +100,13 @@ aside {
   overflow: auto;
 }
 
+.chat-sidebar {
+  padding: 20px;
+  background: #0b1224;
+  border-left: 1px solid #27324d;
+  overflow: auto;
+}
+
 aside h2 {
   font-size: 16px;
 }
@@ -107,6 +114,42 @@ aside h2 {
 .legend {
   font-size: 11px;
   margin-bottom: 16px;
+}
+
+.tree-controls {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+/* Compact, distinctive style for the expand/collapse-all buttons */
+.tree-controls button {
+  background: linear-gradient(180deg, #0f2a57, #08132a);
+  color: #d8e9ff;
+  padding: 6px 10px;
+  font-size: 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(82,113,255,0.18);
+  box-shadow: 0 1px 0 rgba(255,255,255,0.02) inset;
+  cursor: pointer;
+  min-width: 92px;
+  text-align: center;
+}
+.tree-controls button:hover{ background: linear-gradient(180deg,#12408f,#0b234a); }
+.tree-controls button:active{ transform: translateY(1px); }
+.tree-controls button:first-child{ margin-right:6px }
+
+.folder-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 6px 0;
+  color: #e2e9fb;
+}
+
+.folder-header .folder-name {
+  font-weight: 600;
 }
 
 .legend i {
@@ -246,14 +289,50 @@ pre {
 }
 
 .chat {
-  height: 500px;
   display: flex;
   flex-direction: column;
+  height: 100%;
+  min-height: 0;
 }
 
 .messages {
-  flex: 1;
+  flex: 1 1 auto;
   overflow: auto;
+  padding-right: 6px;
+}
+
+.chat-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.chat-header h2 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.repo-name {
+  color: #9fb0e8;
+  font-size: 12px;
+}
+
+.chat-input {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.chat-input input {
+  flex: 1;
+}
+
+.file-panel {
+  max-height: 360px;
+  overflow: auto;
+  border-top: 1px solid #27324d;
+  padding-top: 12px;
 }
 
 .messages > div {
@@ -341,6 +420,12 @@ pre {
     max-height: 230px;
     border-right: 0;
     border-bottom: 1px solid #27324d;
+  }
+
+  .chat-sidebar {
+    max-height: 320px;
+    border-left: 0;
+    border-top: 1px solid #27324d;
   }
 
   .panel {
